@@ -8,6 +8,18 @@
 
 ![UI Editor Preview](./docs/preview.jpg)
 
+### 模板面板
+
+![模板面板](./docs/preview-template.png)
+
+### 属性编辑
+
+![属性编辑](./docs/preview-panel.png)
+
+### 预览效果
+
+![预览效果](./docs/preview-modal.png)
+
 ## 技术栈
 
 | 层 | 选型 |
