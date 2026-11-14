@@ -4,6 +4,10 @@
 
 ![UI Editor Preview](https://img.shields.io/badge/React-19-blue?logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript) ![Vite](https://img.shields.io/badge/Vite-7-purple?logo=vite) ![License](https://img.shields.io/badge/license-MIT-green)
 
+## 预览
+
+![UI Editor Preview](./docs/preview.jpg)
+
 ## 技术栈
 
 | 层 | 选型 |
