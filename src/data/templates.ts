@@ -3,8 +3,8 @@ import type { EditorElement } from '@/types/element'
 export interface TemplateDef {
   id: string
   name: string
+  bgColor: string          // 画布背景色
   elements: Omit<EditorElement, 'id'>[]
-  // 缩略图色板（用于预览）
   colors: string[]
 }
 
@@ -25,6 +25,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'poster-minimal',
         name: '简约海报',
+        bgColor: '#1a1a2e',
         colors: ['#1a1a2e', '#e94560', '#ffffff'],
         elements: [
           // 背景
@@ -57,6 +58,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'event-announce',
         name: '活动公告',
+        bgColor: '#1b1b2f',
         colors: ['#ff6b35', '#f7c59f', '#1b1b2f'],
         elements: [
           // 背景
@@ -90,6 +92,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'business-card',
         name: '名片',
+        bgColor: '#f8fafc',
         colors: ['#ffffff', '#2563eb', '#1f2937'],
         elements: [
           // 白色背景
@@ -124,6 +127,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'quote-card',
         name: '引言卡片',
+        bgColor: '#0f172a',
         colors: ['#0f172a', '#fbbf24', '#f1f5f9'],
         elements: [
           // 背景
@@ -156,6 +160,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'text-hero',
         name: '大标题组',
+        bgColor: '#ffffff',
         colors: ['#4f86f7', '#1f2937', '#6b7280'],
         elements: [
           // 主标题
@@ -171,6 +176,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'text-tag',
         name: '标签组',
+        bgColor: '#ffffff',
         colors: ['#4f86f7', '#ffffff', '#eff6ff'],
         elements: [
           // 蓝色标签背景
@@ -190,6 +196,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'text-chapter',
         name: '章节标题',
+        bgColor: '#ffffff',
         colors: ['#f97316', '#1f2937', '#9ca3af'],
         elements: [
           // 左侧竖色条
@@ -205,6 +212,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'text-number',
         name: '数字序号',
+        bgColor: '#ffffff',
         colors: ['#4f86f7', '#1f2937', '#e5e7eb'],
         elements: [
           // 大数字
@@ -227,6 +235,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'deco-dots',
         name: '圆点阵列',
+        bgColor: '#ffffff',
         colors: ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b'],
         elements: [
           { type: 'circle', x: 200, y: 760, w: 80, h: 80, fill: '#f43f5e', ...BASE },
@@ -246,6 +255,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'deco-corner',
         name: '框线装饰',
+        bgColor: '#ffffff',
         colors: ['#4f86f7', '#e5e7eb'],
         elements: [
           // 左上角
@@ -268,6 +278,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'deco-divider',
         name: '分割线',
+        bgColor: '#ffffff',
         colors: ['#4f86f7', '#e5e7eb'],
         elements: [
           // 左圆点
@@ -283,6 +294,7 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
       {
         id: 'deco-blocks',
         name: '彩色色块',
+        bgColor: '#ffffff',
         colors: ['#6366f1', '#ec4899', '#f59e0b', '#10b981'],
         elements: [
           // 底层大矩形
