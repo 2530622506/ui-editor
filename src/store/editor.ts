@@ -5,7 +5,7 @@ import type { EditorElement } from '@/types/element'
 export interface EditorState {
   elements: EditorElement[]
   selectedIds: string[]
-  history: EditorElement[][]
+  history: { elements: EditorElement[]; canvasBg: string }[]
   historyIndex: number
 
   // 画布设置
@@ -67,7 +67,7 @@ export interface WatermarkConfig {
 export const useEditorStore = create<EditorState>((set, get) => ({
   elements: [],
   selectedIds: [],
-  history: [[]],
+  history: [{ elements: [], canvasBg: '#ffffff' }],
   historyIndex: 0,
 
   canvasW: 1500,
@@ -111,8 +111,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   pushHistory: () => {
-    const { elements, history, historyIndex } = get()
-    const snapshot = structuredClone(elements)
+    const { elements, canvasBg, history, historyIndex } = get()
+    const snapshot = { elements: structuredClone(elements), canvasBg }
     const base = history.slice(0, historyIndex + 1)
     const next = base.length >= 50 ? [...base.slice(1), snapshot] : [...base, snapshot]
     set({ history: next, historyIndex: next.length - 1 })
@@ -121,18 +121,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   undo: () => {
     const { historyIndex, history } = get()
     if (historyIndex <= 0) {
-      set({ elements: [], historyIndex: 0, selectedIds: [] })
+      set({ elements: [], canvasBg: '#ffffff', historyIndex: 0, selectedIds: [] })
       return
     }
     const prev = history[historyIndex - 1]
-    set({ elements: structuredClone(prev), historyIndex: historyIndex - 1, selectedIds: [] })
+    set({ elements: structuredClone(prev.elements), canvasBg: prev.canvasBg, historyIndex: historyIndex - 1, selectedIds: [] })
   },
 
   redo: () => {
     const { historyIndex, history } = get()
     if (historyIndex >= history.length - 1) return
     const next = history[historyIndex + 1]
-    set({ elements: structuredClone(next), historyIndex: historyIndex + 1, selectedIds: [] })
+    set({ elements: structuredClone(next.elements), canvasBg: next.canvasBg, historyIndex: historyIndex + 1, selectedIds: [] })
   },
 
   setSelected: (ids) => set({ selectedIds: ids }),
