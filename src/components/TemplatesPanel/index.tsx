@@ -168,6 +168,59 @@ export default function TemplatesPanel() {
               const isActive = activeId === tpl.id
               return (
                 <div key={tpl.id} style={{ position: 'relative' }}>
+                  {/* 选中时卡片内覆盖层：追加/替换/取消三个按钮 */}
+                  {isActive && (
+                    <div
+                      onClick={e => e.stopPropagation()}
+                      style={{
+                        position: 'absolute', inset: 0, zIndex: 10,
+                        borderRadius: 8, background: 'rgba(15,23,42,0.72)',
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center', gap: 8,
+                        padding: '16px 12px',
+                      }}
+                    >
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginBottom: 4 }}>
+                        使用「{tpl.name}」
+                      </span>
+                      <button
+                        onClick={() => applyTemplate(tpl, 'replace')}
+                        style={{
+                          width: '100%', height: 34, borderRadius: 7, border: 'none',
+                          background: '#4f86f7', fontSize: 12, color: '#fff',
+                          cursor: 'pointer', fontWeight: 500,
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#3b74e0' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#4f86f7' }}
+                      >
+                        替换画布
+                      </button>
+                      <button
+                        onClick={() => applyTemplate(tpl, 'append')}
+                        style={{
+                          width: '100%', height: 34, borderRadius: 7,
+                          border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.1)',
+                          fontSize: 12, color: '#fff', cursor: 'pointer', fontWeight: 500,
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.2)' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)' }}
+                      >
+                        追加到画布
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); setActiveId(null); setPopupPos(null) }}
+                        style={{
+                          width: '100%', height: 28, borderRadius: 6, border: 'none',
+                          background: 'transparent', fontSize: 12,
+                          color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)' }}
+                      >
+                        取消
+                      </button>
+                    </div>
+                  )}
                   {/* 模板卡片 */}
                   <button
                     onClick={e => handleCardClick(e, tpl)}
@@ -212,58 +265,6 @@ export default function TemplatesPanel() {
         </div>
       ))}
 
-      {/* fixed 弹层 — 挂在最外层，不受 overflow 裁剪 */}
-      {activeId && popupPos && (() => {
-        const tpl = TEMPLATE_CATEGORIES.flatMap(c => c.templates).find(t => t.id === activeId)
-        if (!tpl) return null
-        return (
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              position: 'fixed',
-              top: popupPos.top,
-              left: popupPos.left,
-              width: popupPos.width,
-              zIndex: 1000,
-              background: '#fff',
-              borderRadius: 10,
-              boxShadow: '0 6px 24px rgba(0,0,0,0.18)',
-              border: '1px solid #e5e7eb',
-              padding: '12px',
-            }}
-          >
-            <p style={{ fontSize: 12, color: '#666', marginBottom: 10, textAlign: 'center', lineHeight: 1.4 }}>
-              使用「{tpl.name}」
-            </p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => applyTemplate(tpl, 'append')}
-                style={{
-                  flex: 1, height: 34, borderRadius: 7,
-                  border: '1px solid #e5e7eb', background: '#f9fafb',
-                  fontSize: 12, color: '#444', cursor: 'pointer', fontWeight: 500,
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f3f4f6' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#f9fafb' }}
-              >
-                追加
-              </button>
-              <button
-                onClick={() => applyTemplate(tpl, 'replace')}
-                style={{
-                  flex: 1, height: 34, borderRadius: 7,
-                  border: 'none', background: '#4f86f7',
-                  fontSize: 12, color: '#fff', cursor: 'pointer', fontWeight: 500,
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#3b74e0' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#4f86f7' }}
-              >
-                替换画布
-              </button>
-            </div>
-          </div>
-        )
-      })()}
     </div>
   )
 }
