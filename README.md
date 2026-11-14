@@ -1,6 +1,6 @@
 # UI Editor
 
-一款基于 React + DOM + CSS Transform 全自研的 Web 端 UI 可视化编辑器，不依赖 fabric.js 等画布库，核心变换逻辑完全自研，参考 vue-fabric-editor 的交互设计。
+一款基于 React + DOM + CSS Transform 全自研的 Web 端 UI 可视化编辑器，核心变换逻辑完全自研，不依赖任何画布编辑框架。
 
 ![UI Editor Preview](https://img.shields.io/badge/React-19-blue?logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript) ![Vite](https://img.shields.io/badge/Vite-7-purple?logo=vite) ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -20,21 +20,21 @@
 ### 元素操作
 - **5 种基础元素**：矩形、圆形、三角形、文本、图片
 - **移动**：鼠标/touch 拖拽，支持多选整体移动
-- **缩放**：8 个控制手柄，旋转后坐标系正确（借鉴 fabric.js 仿射矩阵）
+- **缩放**：8 个控制手柄，旋转后坐标系正确
 - **旋转**：顶部旋转手柄，角度计算精确
 - **选中**：点击选中、Shift+Click 多选、鼠标框选（Lasso）
 - **命中检测**：旋转元素精确逆矩阵判断，不漂移
 
-### 绘制工具（参考 vue-fabric-editor DrawLinePlugin / DrawPolygonPlugin / FreeDrawPlugin）
+### 绘制工具
 - **直线**：拖拽画线
 - **箭头 / 粗箭头**：SVG `<marker>` 渲染箭头头部
 - **多边形**：逐次点击添加顶点，ESC 或首尾闭合
 - **自由绘**：PencilBrush 路径绘制
 
 ### 组合与对齐
-- **组合**（Cmd+G）：元素平铺 + `groupId` 标记，参考 PPTist 方案
+- **组合**（Cmd+G）：元素平铺 + `groupId` 标记
 - **取消组合**（Cmd+Shift+G）
-- **6 种对齐**：左/右/顶/底/水平居中/垂直居中，含组合整体偏移（参考 PPTist `useAlignActiveElement`）
+- **6 种对齐**：左/右/顶/底/水平居中/垂直居中，含组合整体偏移
 
 ### 历史记录
 - Undo / Redo（Ctrl+Z / Ctrl+Shift+Z）
@@ -109,7 +109,7 @@ src/
 │   ├── useResize.ts     # 缩放（8 手柄 + 旋转后坐标系转换）
 │   ├── useRotate.ts     # 旋转（atan2 角度差）
 │   ├── useDrawMode.ts   # 绘制模式入口
-│   ├── useFabricDraw.ts # fabric.js 叠层绘制（直线/箭头/多边形/自由绘）
+│   ├── useFabricDraw.ts # 绘制叠层（直线/箭头/多边形/自由绘）
 │   ├── useLineEndpoint.ts # 线段端点拖拽
 │   ├── useSelection.ts  # 框选 Lasso
 │   ├── usePinch.ts      # 双指缩放
@@ -128,12 +128,11 @@ src/
 
 ## 核心算法说明
 
-### 旋转后缩放不漂移（借鉴 fabric.js scaleObject）
+### 旋转后缩放不漂移
 
-元素旋转后，直接用鼠标 delta 计算新尺寸会导致控制点漂移。解决方案：
+元素旋转后，直接用鼠标 delta 计算新尺寸会导致控制点漂移。解决方案：将鼠标坐标转换到元素本地坐标系（消除旋转），在本地系计算新尺寸后再转换回全局系。
 
 ```ts
-// 把鼠标坐标转换到元素本地坐标系（消除旋转）
 function toLocalCoord(mouseX, mouseY, el) {
   const cx = el.x + el.w / 2, cy = el.y + el.h / 2
   return rotatePoint(mouseX, mouseY, cx, cy, -el.rotate)
@@ -141,7 +140,7 @@ function toLocalCoord(mouseX, mouseY, el) {
 // 在本地系计算新 w/h，再把新左上角 rotatePoint 回全局系
 ```
 
-### 对齐算法（参考 PPTist useAlignActiveElement）
+### 组合对齐
 
 多选对齐时，组合成员按组合整体 bbox 偏移，保持组内相对位置不变：
 
