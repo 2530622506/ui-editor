@@ -53,10 +53,10 @@ export default function MobileBottomBar({ onAddElement, onShowProps }: Props) {
         <span>撤销</span>
       </button>
 
-      {/* 重做 */}
+      {/* 前进 → 重做 */}
       <button style={btn(canRedo)} onClick={canRedo ? redo : undefined} disabled={!canRedo}>
         <Redo2 size={20} strokeWidth={1.8} />
-        <span>重做</span>
+        <span>前进</span>
       </button>
 
       {/* 删除 */}

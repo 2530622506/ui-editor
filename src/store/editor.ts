@@ -199,7 +199,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   clearAll: () => {
-    set({ elements: [], selectedIds: [] })
+    set({ elements: [], selectedIds: [], canvasBg: '#ffffff' })
     get().pushHistory()
   },
 
