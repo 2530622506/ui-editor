@@ -12,7 +12,6 @@
 | 构建 | Vite 7 |
 | 状态管理 | Zustand |
 | 样式 | Tailwind CSS v4 |
-| 绘制元素 | fabric.js v5（叠层，仅用于绘制功能） |
 | 图标 | lucide-react |
 
 ## 功能列表
