@@ -15,7 +15,6 @@ export interface TemplateCategory {
 }
 
 const BASE = { stroke: 'transparent', strokeWidth: 0, opacity: 1, rotate: 0 }
-const STROKE = { opacity: 1, rotate: 0 }
 
 export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
   {

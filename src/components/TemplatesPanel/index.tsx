@@ -115,8 +115,8 @@ interface PopupPos { top: number; left: number; width: number; below: boolean }
 export default function TemplatesPanel() {
   const { addElement, setElements, setCanvasBg } = useEditorStore()
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [popupPos, setPopupPos] = useState<PopupPos | null>(null)
-  const POPUP_H = 100 // 弹层估算高度
+  const [, setPopupPos] = useState<PopupPos | null>(null)
+  const POPUP_H = 100
 
   const applyTemplate = (tpl: TemplateDef, action: 'replace' | 'append') => {
     if (action === 'replace') {
