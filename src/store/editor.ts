@@ -67,7 +67,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   history: [[]],
   historyIndex: 0,
 
-  canvasW: 1080,
+  canvasW: 1500,
   canvasH: 1920,
   canvasBg: '#ffffff',
   setCanvasSize: (w, h) => set({ canvasW: Math.max(200, w), canvasH: Math.max(200, h) }),
