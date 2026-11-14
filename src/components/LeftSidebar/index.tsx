@@ -28,9 +28,9 @@ interface ShapeDef {
 
 const SHAPES: ShapeDef[] = [
   { type: 'text', label: '文字', icon: <Type size={20} strokeWidth={1.5} />,
-    extra: { w: 200, h: 60, content: '双击编辑', fontSize: 28, color: '#1f2937', fill: 'transparent', stroke: 'transparent', strokeWidth: 0 } },
+    extra: { w: 300, h: 80, content: '双击编辑', fontSize: 32, color: '#1f2937', fill: 'transparent', stroke: 'transparent', strokeWidth: 0 } },
   { type: 'rect',     label: '矩形', icon: <Square    size={20} strokeWidth={1.5} /> },
-  { type: 'circle',   label: '圆形', icon: <Circle    size={20} strokeWidth={1.5} /> },
+  { type: 'circle',   label: '圆形', icon: <Circle    size={20} strokeWidth={1.5} />, extra: { w: 300, h: 300 } },
   { type: 'triangle', label: '三角', icon: <Triangle  size={20} strokeWidth={1.5} /> },
   { type: 'image',    label: '图片', icon: <ImageIcon size={20} strokeWidth={1.5} /> },
 ]
@@ -77,7 +77,7 @@ export default function LeftSidebar() {
       input.click(); return
     }
     addElement({ type: shape.type, x: CANVAS_CENTER_X + rand(), y: CANVAS_CENTER_Y + rand(),
-      w: 240, h: 180, ...DEFAULT, ...shape.extra } as Omit<EditorElement, 'id'>)
+      w: 300, h: 300, ...DEFAULT, ...shape.extra } as Omit<EditorElement, 'id'>)
   }
 
   const toggleTab = (key: TabKey) => setActiveTab(prev => prev === key ? null : key)
