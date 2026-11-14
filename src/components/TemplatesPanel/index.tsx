@@ -110,9 +110,13 @@ function TemplateThumbnail({ tpl }: { tpl: TemplateDef }) {
   )
 }
 
+interface PopupPos { top: number; left: number; width: number; below: boolean }
+
 export default function TemplatesPanel() {
   const { addElement, setElements, setCanvasBg } = useEditorStore()
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [popupPos, setPopupPos] = useState<PopupPos | null>(null)
+  const POPUP_H = 100 // 弹层估算高度
 
   const applyTemplate = (tpl: TemplateDef, action: 'replace' | 'append') => {
     if (action === 'replace') {
@@ -127,17 +131,32 @@ export default function TemplatesPanel() {
       })
     }
     setActiveId(null)
+    setPopupPos(null)
+  }
+
+  const handleCardClick = (e: React.MouseEvent, tpl: TemplateDef) => {
+    e.stopPropagation()
+    if (activeId === tpl.id) {
+      setActiveId(null); setPopupPos(null); return
+    }
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const below = rect.top > POPUP_H + 60 ? false : true
+    setActiveId(tpl.id)
+    setPopupPos({
+      top: below ? rect.bottom + 6 : rect.top - POPUP_H - 6,
+      left: rect.left,
+      width: rect.width,
+      below,
+    })
   }
 
   return (
     <div style={{ padding: '10px', overflowY: 'auto', height: '100%', boxSizing: 'border-box' }}
-      onClick={() => setActiveId(null)}>
+      onClick={() => { setActiveId(null); setPopupPos(null) }}>
       {TEMPLATE_CATEGORIES.map(cat => (
         <div key={cat.key} style={{ marginBottom: 20 }}>
           {/* 分类标题 */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10,
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
             <span style={{ fontSize: 11, fontWeight: 600, color: '#999', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
               {cat.label}
             </span>
@@ -151,7 +170,7 @@ export default function TemplatesPanel() {
                 <div key={tpl.id} style={{ position: 'relative' }}>
                   {/* 模板卡片 */}
                   <button
-                    onClick={e => { e.stopPropagation(); setActiveId(isActive ? null : tpl.id) }}
+                    onClick={e => handleCardClick(e, tpl)}
                     style={{
                       display: 'block', width: '100%', padding: 0,
                       border: `2px solid ${isActive ? '#4f86f7' : 'transparent'}`,
@@ -169,9 +188,7 @@ export default function TemplatesPanel() {
                       if (!isActive) (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.08)'
                     }}
                   >
-                    {/* 缩略图 */}
                     <TemplateThumbnail tpl={tpl} />
-                    {/* 底部信息行 */}
                     <div style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '7px 10px', background: '#fff',
@@ -188,64 +205,65 @@ export default function TemplatesPanel() {
                       </div>
                     </div>
                   </button>
-
-                  {/* 操作弹层 */}
-                  {isActive && (
-                    <div
-                      onClick={e => e.stopPropagation()}
-                      style={{
-                        position: 'absolute', left: 0, right: 0,
-                        bottom: 'calc(100% + 6px)', zIndex: 200,
-                        background: '#fff', borderRadius: 10,
-                        boxShadow: '0 6px 24px rgba(0,0,0,0.16)',
-                        border: '1px solid #e5e7eb',
-                        padding: '12px',
-                      }}
-                    >
-                      <p style={{
-                        fontSize: 12, color: '#666', marginBottom: 10,
-                        textAlign: 'center', lineHeight: 1.4,
-                      }}>
-                        使用「{tpl.name}」
-                      </p>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button
-                          onClick={() => applyTemplate(tpl, 'append')}
-                          style={{
-                            flex: 1, height: 34, borderRadius: 7,
-                            border: '1px solid #e5e7eb',
-                            background: '#f9fafb', fontSize: 12,
-                            color: '#444', cursor: 'pointer', fontWeight: 500,
-                            transition: 'background 0.12s',
-                          }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f3f4f6' }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#f9fafb' }}
-                        >
-                          追加
-                        </button>
-                        <button
-                          onClick={() => applyTemplate(tpl, 'replace')}
-                          style={{
-                            flex: 1, height: 34, borderRadius: 7,
-                            border: 'none',
-                            background: '#4f86f7', fontSize: 12,
-                            color: '#fff', cursor: 'pointer', fontWeight: 500,
-                            transition: 'background 0.12s',
-                          }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#3b74e0' }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#4f86f7' }}
-                        >
-                          替换画布
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )
             })}
           </div>
         </div>
       ))}
+
+      {/* fixed 弹层 — 挂在最外层，不受 overflow 裁剪 */}
+      {activeId && popupPos && (() => {
+        const tpl = TEMPLATE_CATEGORIES.flatMap(c => c.templates).find(t => t.id === activeId)
+        if (!tpl) return null
+        return (
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              top: popupPos.top,
+              left: popupPos.left,
+              width: popupPos.width,
+              zIndex: 1000,
+              background: '#fff',
+              borderRadius: 10,
+              boxShadow: '0 6px 24px rgba(0,0,0,0.18)',
+              border: '1px solid #e5e7eb',
+              padding: '12px',
+            }}
+          >
+            <p style={{ fontSize: 12, color: '#666', marginBottom: 10, textAlign: 'center', lineHeight: 1.4 }}>
+              使用「{tpl.name}」
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => applyTemplate(tpl, 'append')}
+                style={{
+                  flex: 1, height: 34, borderRadius: 7,
+                  border: '1px solid #e5e7eb', background: '#f9fafb',
+                  fontSize: 12, color: '#444', cursor: 'pointer', fontWeight: 500,
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f3f4f6' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#f9fafb' }}
+              >
+                追加
+              </button>
+              <button
+                onClick={() => applyTemplate(tpl, 'replace')}
+                style={{
+                  flex: 1, height: 34, borderRadius: 7,
+                  border: 'none', background: '#4f86f7',
+                  fontSize: 12, color: '#fff', cursor: 'pointer', fontWeight: 500,
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#3b74e0' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#4f86f7' }}
+              >
+                替换画布
+              </button>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
