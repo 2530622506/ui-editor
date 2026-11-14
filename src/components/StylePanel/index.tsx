@@ -278,12 +278,10 @@ export default function StylePanel() {
       {/* 位置信息 */}
       <Section title="位置信息">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 6 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            <div style={S.attrRow}><span style={S.attrLabel}>X轴</span><NumInput value={el.x} onChange={v => patch({ x: v })} /></div>
-            <div style={S.attrRow}><span style={S.attrLabel}>Y轴</span><NumInput value={el.y} onChange={v => patch({ y: v })} /></div>
-            <div style={S.attrRow}><span style={S.attrLabel}>宽</span><NumInput value={el.w} min={1} onChange={v => patch({ w: v })} /></div>
-            <div style={S.attrRow}><span style={S.attrLabel}>高</span><NumInput value={el.h} min={1} onChange={v => patch({ h: v })} /></div>
-          </div>
+          <div style={S.attrRow}><span style={S.attrLabel}>X 轴</span><NumInput value={el.x} onChange={v => patch({ x: v })} suffix="px" /></div>
+          <div style={S.attrRow}><span style={S.attrLabel}>Y 轴</span><NumInput value={el.y} onChange={v => patch({ y: v })} suffix="px" /></div>
+          <div style={S.attrRow}><span style={S.attrLabel}>宽</span><NumInput value={el.w} min={1} onChange={v => patch({ w: v })} suffix="px" /></div>
+          <div style={S.attrRow}><span style={S.attrLabel}>高</span><NumInput value={el.h} min={1} onChange={v => patch({ h: v })} suffix="px" /></div>
         </div>
         <AttrRow label="旋转">
           <span style={{ fontSize: 13, color: '#bbb', marginRight: 4 }}>○</span>
@@ -307,9 +305,11 @@ export default function StylePanel() {
             <input type="color" value={el.stroke} onChange={e => patch({ stroke: e.target.value })}
               style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid #eee', cursor: 'pointer', padding: 1, background: '#fff', flexShrink: 0 }} />
             <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#888', marginLeft: 8, flex: 1 }}>{el.stroke}</span>
+          </AttrRow>
+          <AttrRow label="粗细">
             <input type="number" min={0} max={20} value={el.strokeWidth}
               onChange={e => patch({ strokeWidth: Number(e.target.value) })}
-              style={{ width: 36, background: 'transparent', border: 'none', outline: 'none', fontSize: 12, color: '#555', textAlign: 'right' }} />
+              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 13, color: '#333', textAlign: 'right' }} />
             <span style={{ fontSize: 11, color: '#bbb', marginLeft: 2 }}>px</span>
           </AttrRow>
         </Section>
@@ -324,7 +324,7 @@ export default function StylePanel() {
           <AttrRow label="颜色">
             <input type="color" value={textEl.color} onChange={e => patch({ color: e.target.value })}
               style={{ width: 24, height: 24, borderRadius: 4, border: '1px solid #eee', cursor: 'pointer', padding: 1, background: '#fff', flexShrink: 0 }} />
-            <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#888', marginLeft: 8 }}>{textEl.color}</span>
+            <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#888', marginLeft: 8, flex: 1 }}>{textEl.color}</span>
           </AttrRow>
         </Section>
       )}
