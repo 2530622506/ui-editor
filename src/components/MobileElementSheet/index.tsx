@@ -1,15 +1,72 @@
+import { useState, useEffect, useRef } from 'react'
 import {
   Square, Circle, Triangle, Type, Image as ImageIcon,
   Minus, ArrowRight, ArrowBigRight, Hexagon, Pencil,
 } from 'lucide-react'
 import { useEditorStore } from '@/store/editor'
-import type { EditorElement, ElementType } from '@/types/element'
+import type { EditorElement, ElementType, TextElement } from '@/types/element'
 import MobileSheet from '@/components/MobileSheet'
+import { TEMPLATE_CATEGORIES, type TemplateDef } from '@/data/templates'
+import { nanoid } from 'nanoid'
 
-const CANVAS_CENTER_X = 540
+const CANVAS_CENTER_X = 750
 const CANVAS_CENTER_Y = 960
 const rand = () => Math.round((Math.random() - 0.5) * 150)
 const DEFAULT = { fill: '#4f86f7', stroke: '#2563eb', strokeWidth: 2, opacity: 1, rotate: 0 }
+
+// ── 模板缩略图（canvas 渲染） ──
+const THUMB_W = 100
+const THUMB_H = Math.round(THUMB_W * 1920 / 1500)
+
+function TemplateThumbnail({ tpl }: { tpl: TemplateDef }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const sx = THUMB_W / 1500
+  const sy = THUMB_H / 1920
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = THUMB_W * dpr
+    canvas.height = THUMB_H * dpr
+    ctx.scale(dpr, dpr)
+    ctx.fillStyle = tpl.bgColor
+    ctx.fillRect(0, 0, THUMB_W, THUMB_H)
+    for (const el of tpl.elements) {
+      ctx.save()
+      ctx.globalAlpha = el.opacity ?? 1
+      const x = el.x * sx, y = el.y * sy
+      const w = el.w * sx, h = el.h * sy
+      if (el.rotate) {
+        ctx.translate(x + w / 2, y + h / 2)
+        ctx.rotate((el.rotate * Math.PI) / 180)
+        ctx.translate(-(x + w / 2), -(y + h / 2))
+      }
+      if (el.type === 'rect') {
+        if (el.fill && el.fill !== 'transparent') { ctx.fillStyle = el.fill; ctx.fillRect(x, y, w, h) }
+        if (el.strokeWidth && el.stroke && el.stroke !== 'transparent') {
+          ctx.strokeStyle = el.stroke; ctx.lineWidth = el.strokeWidth * Math.min(sx, sy); ctx.strokeRect(x, y, w, h)
+        }
+      } else if (el.type === 'circle') {
+        ctx.beginPath(); ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2)
+        if (el.fill && el.fill !== 'transparent') { ctx.fillStyle = el.fill; ctx.fill() }
+      } else if (el.type === 'triangle') {
+        ctx.beginPath(); ctx.moveTo(x + w / 2, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h); ctx.closePath()
+        if (el.fill && el.fill !== 'transparent') { ctx.fillStyle = el.fill; ctx.fill() }
+      } else if (el.type === 'text') {
+        const te = el as TextElement & { x: number; y: number; w: number }
+        const fs = Math.max(1, te.fontSize * Math.min(sx, sy))
+        ctx.font = `${fs}px system-ui`; ctx.fillStyle = te.color || '#333'; ctx.textBaseline = 'top'
+        ;(te.content || '').split('\n').forEach((line, i) => ctx.fillText(line, x, y + i * fs * 1.3, w))
+      }
+      ctx.restore()
+    }
+  }, [tpl, sx, sy])
+
+  return <canvas ref={canvasRef} style={{ width: THUMB_W, height: THUMB_H, borderRadius: 4, display: 'block' }} />
+}
 
 interface ShapeDef {
   type: ElementType; label: string; icon: React.ReactNode
@@ -18,9 +75,9 @@ interface ShapeDef {
 
 const SHAPES: ShapeDef[] = [
   { type: 'text', label: '文字', icon: <Type size={22} strokeWidth={1.5} />,
-    extra: { w: 200, h: 60, content: '双击编辑', fontSize: 28, color: '#1f2937', fill: 'transparent', stroke: 'transparent', strokeWidth: 0 } },
+    extra: { w: 300, h: 80, content: '双击编辑', fontSize: 32, color: '#1f2937', fill: 'transparent', stroke: 'transparent', strokeWidth: 0 } },
   { type: 'rect',     label: '矩形',   icon: <Square    size={22} strokeWidth={1.5} /> },
-  { type: 'circle',   label: '圆形',   icon: <Circle    size={22} strokeWidth={1.5} /> },
+  { type: 'circle',   label: '圆形',   icon: <Circle    size={22} strokeWidth={1.5} />, extra: { w: 400, h: 400 } },
   { type: 'triangle', label: '三角',   icon: <Triangle  size={22} strokeWidth={1.5} /> },
   { type: 'image',    label: '图片',   icon: <ImageIcon size={22} strokeWidth={1.5} /> },
 ]
@@ -38,7 +95,6 @@ const grid: React.CSSProperties = {
   display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1,
   borderTop: '1px solid #f0f0f0',
 }
-
 const cell: React.CSSProperties = {
   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
   gap: 5, padding: '14px 4px',
@@ -48,13 +104,14 @@ const cell: React.CSSProperties = {
   WebkitTapHighlightColor: 'transparent',
 }
 
-interface Props {
-  open: boolean
-  onClose: () => void
-}
+type TabKey = 'elements' | 'templates'
+
+interface Props { open: boolean; onClose: () => void }
 
 export default function MobileElementSheet({ open, onClose }: Props) {
-  const { addElement, setDrawMode, drawMode } = useEditorStore()
+  const { addElement, setElements, setCanvasBg, setDrawMode, drawMode } = useEditorStore()
+  const [tab, setTab] = useState<TabKey>('elements')
+  const [activeId, setActiveId] = useState<string | null>(null)
 
   const addShape = (shape: ShapeDef) => {
     if (shape.type === 'image') {
@@ -65,7 +122,7 @@ export default function MobileElementSheet({ open, onClose }: Props) {
         const reader = new FileReader()
         reader.onload = (evt) => addElement({
           type: 'image', x: CANVAS_CENTER_X + rand(), y: CANVAS_CENTER_Y + rand(),
-          w: 300, h: 200, src: evt.target?.result as string, ...DEFAULT,
+          w: 400, h: 300, src: evt.target?.result as string, ...DEFAULT,
         } as Omit<EditorElement, 'id'>)
         reader.readAsDataURL(file)
       }
@@ -74,7 +131,7 @@ export default function MobileElementSheet({ open, onClose }: Props) {
       addElement({
         type: shape.type,
         x: CANVAS_CENTER_X + rand(), y: CANVAS_CENTER_Y + rand(),
-        w: 240, h: 180, ...DEFAULT, ...shape.extra,
+        w: 400, h: 400, ...DEFAULT, ...shape.extra,
       } as Omit<EditorElement, 'id'>)
     }
     onClose()
@@ -85,40 +142,152 @@ export default function MobileElementSheet({ open, onClose }: Props) {
     onClose()
   }
 
-  return (
-    <MobileSheet open={open} onClose={onClose} title="添加元素" height="62vh">
-      <div style={{ padding: '10px 0 0' }}>
-        <p style={{ fontSize: 11, color: '#999', fontWeight: 500, padding: '0 16px 6px', letterSpacing: 0.3 }}>
-          基础元素
-        </p>
-        <div style={grid}>
-          {SHAPES.map(shape => (
-            <button key={shape.type} style={cell} onClick={() => addShape(shape)}>
-              {shape.icon}
-              <span>{shape.label}</span>
-            </button>
-          ))}
-        </div>
+  const applyTemplate = (tpl: TemplateDef, action: 'replace' | 'append') => {
+    if (action === 'replace') {
+      setCanvasBg(tpl.bgColor)
+      setElements(tpl.elements)
+    } else {
+      tpl.elements.forEach(el => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { ...rest } = el as Omit<EditorElement, 'id'> & { id?: string }
+        delete rest.id
+        addElement({ ...rest, id: nanoid() } as EditorElement)
+      })
+    }
+    setActiveId(null)
+    onClose()
+  }
 
-        <p style={{ fontSize: 11, color: '#999', fontWeight: 500, padding: '14px 16px 6px', letterSpacing: 0.3 }}>
-          绘制工具
-        </p>
-        <div style={grid}>
-          {DRAW_SHAPES.map(shape => (
-            <button
-              key={shape.key} style={{
+  return (
+    <MobileSheet open={open} onClose={onClose} title="添加" height="72vh">
+      {/* Tab 切换 */}
+      <div style={{
+        display: 'flex', borderBottom: '1px solid #f0f0f0',
+        padding: '0 16px', gap: 0, flexShrink: 0,
+      }}>
+        {([['elements', '元素'], ['templates', '模板']] as [TabKey, string][]).map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            flex: 1, height: 40, border: 'none', background: 'none',
+            fontSize: 13, fontWeight: tab === key ? 600 : 400,
+            color: tab === key ? '#4f86f7' : '#888',
+            borderBottom: `2px solid ${tab === key ? '#4f86f7' : 'transparent'}`,
+            cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+            transition: 'color 0.15s',
+          }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* 元素面板 */}
+      {tab === 'elements' && (
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          <p style={{ fontSize: 11, color: '#999', fontWeight: 500, padding: '10px 16px 6px', letterSpacing: 0.3 }}>
+            基础元素
+          </p>
+          <div style={grid}>
+            {SHAPES.map(shape => (
+              <button key={shape.type} style={cell} onClick={() => addShape(shape)}>
+                {shape.icon}
+                <span>{shape.label}</span>
+              </button>
+            ))}
+          </div>
+          <p style={{ fontSize: 11, color: '#999', fontWeight: 500, padding: '14px 16px 6px', letterSpacing: 0.3 }}>
+            绘制工具
+          </p>
+          <div style={grid}>
+            {DRAW_SHAPES.map(shape => (
+              <button key={shape.key} style={{
                 ...cell,
                 color: drawMode === shape.key ? '#4f86f7' : '#333',
                 background: drawMode === shape.key ? '#f0f5ff' : '#fff',
-              }}
-              onClick={() => toggleDraw(shape.key)}
-            >
-              {shape.icon}
-              <span>{shape.label}</span>
-            </button>
+              }} onClick={() => toggleDraw(shape.key)}>
+                {shape.icon}
+                <span>{shape.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 模板面板 */}
+      {tab === 'templates' && (
+        <div style={{ overflowY: 'auto', flex: 1, padding: '10px 12px' }}>
+          {TEMPLATE_CATEGORIES.map(cat => (
+            <div key={cat.key} style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#999', letterSpacing: '0.5px' }}>
+                  {cat.label}
+                </span>
+                <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />
+              </div>
+              {/* 横向两列网格 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {cat.templates.map(tpl => {
+                  const isActive = activeId === tpl.id
+                  return (
+                    <div key={tpl.id} style={{ position: 'relative' }}>
+                      {/* 选中遮罩 */}
+                      {isActive && (
+                        <div
+                          onClick={e => e.stopPropagation()}
+                          style={{
+                            position: 'absolute', inset: 0, zIndex: 10, borderRadius: 8,
+                            background: 'rgba(15,23,42,0.75)',
+                            display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 8px',
+                          }}
+                        >
+                          <button onClick={() => applyTemplate(tpl, 'replace')} style={{
+                            width: '100%', height: 30, borderRadius: 6, border: 'none',
+                            background: '#4f86f7', fontSize: 11, color: '#fff', cursor: 'pointer', fontWeight: 500,
+                          }}>替换画布</button>
+                          <button onClick={() => applyTemplate(tpl, 'append')} style={{
+                            width: '100%', height: 30, borderRadius: 6,
+                            border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.1)',
+                            fontSize: 11, color: '#fff', cursor: 'pointer',
+                          }}>追加</button>
+                          <button onClick={e => { e.stopPropagation(); setActiveId(null) }} style={{
+                            background: 'none', border: 'none', fontSize: 11,
+                            color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '2px 0',
+                          }}>取消</button>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setActiveId(isActive ? null : tpl.id)}
+                        style={{
+                          display: 'block', width: '100%', padding: 0,
+                          border: `2px solid ${isActive ? '#4f86f7' : 'transparent'}`,
+                          borderRadius: 8, cursor: 'pointer', background: 'transparent',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.08)', overflow: 'hidden',
+                          WebkitTapHighlightColor: 'transparent',
+                        }}
+                      >
+                        <TemplateThumbnail tpl={tpl} />
+                        <div style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '5px 8px', background: '#fff', borderTop: '1px solid #f3f4f6',
+                        }}>
+                          <span style={{ fontSize: 11, color: '#333', fontWeight: 500 }}>{tpl.name}</span>
+                          <div style={{ display: 'flex', gap: 2 }}>
+                            {tpl.colors.slice(0, 3).map((c, i) => (
+                              <div key={i} style={{
+                                width: 8, height: 8, borderRadius: '50%',
+                                background: c, border: '1px solid rgba(0,0,0,0.08)',
+                              }} />
+                            ))}
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           ))}
         </div>
-      </div>
+      )}
     </MobileSheet>
   )
 }

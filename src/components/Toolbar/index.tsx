@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Undo2, Redo2, Trash2, Trash, Group, Ungroup, Eye, Stamp, Hand } from 'lucide-react'
+import { Undo2, Redo2, Trash2, Trash, Group, Ungroup, Eye, Stamp, Hand, PenTool } from 'lucide-react'
 import { useEditorStore } from '@/store/editor'
 import PreviewModal from '@/components/PreviewModal'
 import WatermarkModal from '@/components/WatermarkModal'
@@ -168,13 +168,14 @@ export default function Toolbar() {
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         } as React.CSSProperties}>
-          {/* Logo */}
-          <span style={{
-            fontSize: 13, fontWeight: 700, color: '#333',
-            marginRight: 4, flexShrink: 0, userSelect: 'none', letterSpacing: '-0.3px',
+          {/* Logo → PenTool 图标 */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 32, height: 32, borderRadius: 8, background: '#4f86f7',
+            flexShrink: 0, marginRight: 2,
           }}>
-            UI
-          </span>
+            <PenTool size={16} color="#fff" strokeWidth={2} />
+          </div>
           <Sep />
 
           {/* 撤销 / 重做（底部栏已有，这里作为快捷保留） */}
