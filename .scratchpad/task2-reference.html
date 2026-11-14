@@ -1,0 +1,790 @@
+<title>Task 2 — Transform Hooks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ─── Layout: single-column doc with sticky nav sidebar at ≥900px ─── */
+  :root {
+    --bg:        #f7f7f8;
+    --surface:   #ffffff;
+    --border:    #e2e3e6;
+    --text:      #1a1b1e;
+    --muted:     #6b6f7a;
+    --accent:    #2563eb;
+    --accent-lt: #dbeafe;
+    --tag-move:  #dcfce7;
+    --tag-move-t:#15803d;
+    --tag-resize:#fef9c3;
+    --tag-resize-t:#854d0e;
+    --tag-rotate:#fce7f3;
+    --tag-rotate-t:#9d174d;
+    --tag-comp:  #ede9fe;
+    --tag-comp-t:#5b21b6;
+    --code-bg:   #f1f2f4;
+    --code-text: #2d3748;
+
+    --font-head: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #111214;
+      --surface:   #1c1d20;
+      --border:    #2a2b30;
+      --text:      #e8e9ec;
+      --muted:     #8b8f9b;
+      --accent:    #3b82f6;
+      --accent-lt: #1e3a5f;
+      --tag-move:  #14532d;
+      --tag-move-t:#86efac;
+      --tag-resize:#422006;
+      --tag-resize-t:#fde68a;
+      --tag-rotate:#500724;
+      --tag-rotate-t:#fbcfe8;
+      --tag-comp:  #2e1065;
+      --tag-comp-t:#c4b5fd;
+      --code-bg:   #16181c;
+      --code-text: #c9d1e0;
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg:        #111214;
+    --surface:   #1c1d20;
+    --border:    #2a2b30;
+    --text:      #e8e9ec;
+    --muted:     #8b8f9b;
+    --accent:    #3b82f6;
+    --accent-lt: #1e3a5f;
+    --tag-move:  #14532d;
+    --tag-move-t:#86efac;
+    --tag-resize:#422006;
+    --tag-resize-t:#fde68a;
+    --tag-rotate:#500724;
+    --tag-rotate-t:#fbcfe8;
+    --tag-comp:  #2e1065;
+    --tag-comp-t:#c4b5fd;
+    --code-bg:   #16181c;
+    --code-text: #c9d1e0;
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0;
+  }
+
+  /* ─── Shell ─── */
+  .shell {
+    max-width: 980px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 0 32px;
+    align-items: start;
+    padding-block: 40px;
+  }
+
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+    .nav   { display: none; }
+  }
+
+  /* ─── Sidebar nav ─── */
+  .nav {
+    position: sticky;
+    top: 32px;
+  }
+
+  .nav-label {
+    font-family: var(--font-head);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .nav a {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    transition: color .15s, background .15s;
+  }
+
+  .nav a:hover, .nav a.active {
+    color: var(--accent);
+    background: var(--accent-lt);
+  }
+
+  .nav-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 10px 0;
+  }
+
+  /* ─── Main content ─── */
+  .main { min-width: 0; }
+
+  /* Page header */
+  .page-header {
+    margin-bottom: 36px;
+  }
+
+  .page-eyebrow {
+    font-family: var(--font-head);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .page-header h1 {
+    font-family: var(--font-head);
+    font-size: 26px;
+    font-weight: 600;
+    margin: 0 0 10px;
+    text-wrap: balance;
+    color: var(--text);
+  }
+
+  .page-header p {
+    color: var(--muted);
+    max-width: 55ch;
+    margin: 0;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 44px;
+    scroll-margin-top: 24px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-header h2 {
+    font-family: var(--font-head);
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text);
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  .tag-move   { background: var(--tag-move);   color: var(--tag-move-t);   }
+  .tag-resize { background: var(--tag-resize); color: var(--tag-resize-t); }
+  .tag-rotate { background: var(--tag-rotate); color: var(--tag-rotate-t); }
+  .tag-comp   { background: var(--tag-comp);   color: var(--tag-comp-t);   }
+
+  .section-desc {
+    color: var(--muted);
+    margin: 0 0 16px;
+    max-width: 60ch;
+  }
+
+  /* Signature box */
+  .sig-box {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+  }
+
+  .sig-box code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--code-text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Info grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 600px) {
+    .info-grid { grid-template-columns: 1fr; }
+  }
+
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+
+  .info-card-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .info-card ul {
+    margin: 0;
+    padding-left: 16px;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .info-card ul li { margin-bottom: 2px; }
+
+  .info-card code {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    background: var(--code-bg);
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: var(--code-text);
+  }
+
+  /* Anchor table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  th {
+    font-family: var(--font-head);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  td code {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--code-text);
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+  }
+
+  /* Callout */
+  .callout {
+    background: var(--accent-lt);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .callout strong { color: var(--accent); }
+
+  /* Usage snippet */
+  .snippet {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin-bottom: 0;
+  }
+
+  .snippet pre {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--code-text);
+    white-space: pre;
+  }
+
+  .snippet-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  /* Handle grid diagram */
+  .handle-diagram {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .hd-box {
+    position: relative;
+    width: 160px;
+    height: 100px;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .hd-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hd-label {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  /* Rotate handle diagram */
+  .rh-diagram {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .rh-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .rh-dot {
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: crosshair;
+  }
+
+  .rh-line {
+    width: 1px;
+    height: 24px;
+    background: var(--accent);
+  }
+
+  .rh-box {
+    width: 100px;
+    height: 60px;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  /* File path badge */
+  .filepath {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-bottom: 12px;
+  }
+
+  /* Theme toggle */
+  .theme-toggle {
+    position: fixed;
+    top: max(16px, env(safe-area-inset-top, 0px));
+    right: max(16px, env(safe-area-inset-right, 0px));
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: var(--font-body);
+    z-index: 100;
+    transition: color .15s, background .15s;
+  }
+
+  .theme-toggle:hover { color: var(--text); }
+</style>
+
+<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">◑ Theme</button>
+
+<div class="shell">
+  <!-- Sidebar nav -->
+  <nav class="nav" aria-label="Sections">
+    <div class="nav-label">Task 2</div>
+    <a href="#use-move">useMove</a>
+    <a href="#use-resize">useResize</a>
+    <a href="#use-rotate">useRotate</a>
+    <hr class="nav-divider">
+    <a href="#resize-handles">ResizeHandles</a>
+    <a href="#rotate-handle">RotateHandle</a>
+    <hr class="nav-divider">
+    <a href="#usage">Usage example</a>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+    <header class="page-header">
+      <div class="page-eyebrow">ui-editor · src/hooks &amp; src/components/Element</div>
+      <h1>变换 Hooks — 移动 / 缩放 / 旋转</h1>
+      <p>Task 2 实现的 5 个文件。逻辑坐标系（1920×1080），所有鼠标/touch 坐标先经 <code style="font-family:var(--font-mono);font-size:12px;background:var(--code-bg);padding:1px 5px;border-radius:3px">clientToCanvas</code> 除以 scale 换算，再操作 store。</p>
+    </header>
+
+    <!-- useMove -->
+    <section class="section" id="use-move">
+      <div class="section-header">
+        <h2>useMove</h2>
+        <span class="tag tag-move">hook</span>
+      </div>
+      <div class="filepath">src/hooks/useMove.ts</div>
+      <p class="section-desc">批量移动任意数量的选中元素。起点快照 + 拖拽偏移，mouseup 时一次性 pushHistory。</p>
+
+      <div class="sig-box">
+        <code>useMove(
+  elementIds:   string[],
+  canvasScale:  () =&gt; number,
+  getCanvasRect: () =&gt; DOMRect | null
+) → { onMoveStart: (e: MouseEvent | TouchEvent) =&gt; void }</code>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-card-label">参数</div>
+          <ul>
+            <li><code>elementIds</code> — 要移动的 ID 列表</li>
+            <li><code>canvasScale</code> — 函数（避免闭包过期）</li>
+            <li><code>getCanvasRect</code> — 函数，返回画布 DOMRect</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <div class="info-card-label">内部 refs</div>
+          <ul>
+            <li><code>startPosRef</code> — <code>{[id]: {x,y}}</code> 起点快照</li>
+            <li><code>startMouseRef</code> — 鼠标起点（逻辑坐标）</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>关键：</strong>onMoveStart 内使用 <code>useEditorStore.getState().elements</code> 而非 hook 返回值，避免 React 闭包过期读到旧 state。
+      </div>
+    </section>
+
+    <!-- useResize -->
+    <section class="section" id="use-resize">
+      <div class="section-header">
+        <h2>useResize</h2>
+        <span class="tag tag-resize">hook</span>
+      </div>
+      <div class="filepath">src/hooks/useResize.ts</div>
+      <p class="section-desc">单元素 8 方向缩放。旋转后不漂移的核心在于全程在元素本地坐标系（已消除旋转）中计算，最后再把新左上角 rotatePoint 回全局系。</p>
+
+      <div class="sig-box">
+        <code>useResize(
+  elementId:    string,
+  canvasScale:  () =&gt; number,
+  getCanvasRect: () =&gt; DOMRect | null
+) → { onResizeStart: (e: MouseEvent | TouchEvent, handle: HandleType) =&gt; void }</code>
+      </div>
+
+      <div class="callout">
+        <strong>旋转后缩放不漂移（借鉴 fabric.js）：</strong>
+        鼠标逻辑坐标 → <code>toLocalCoord</code> → 本地系；锚点在本地系中固定；本地系计算新 w/h；新左上角 <code>rotatePoint</code> 回全局 → 更新 x/y/w/h。
+      </div>
+
+      <p style="font-size:13px;color:var(--muted);margin:0 0 10px">8 个手柄的锚点（anchor = 对面手柄中心，元素未旋转坐标系）：</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>handle</th><th>锚点 x</th><th>锚点 y</th><th>含义</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>nw</code></td><td><code>x + w</code></td><td><code>y + h</code></td><td>se 角</td></tr>
+            <tr><td><code>n</code></td><td><code>x + w/2</code></td><td><code>y + h</code></td><td>s 边中点</td></tr>
+            <tr><td><code>ne</code></td><td><code>x</code></td><td><code>y + h</code></td><td>sw 角</td></tr>
+            <tr><td><code>e</code></td><td><code>x</code></td><td><code>y + h/2</code></td><td>w 边中点</td></tr>
+            <tr><td><code>se</code></td><td><code>x</code></td><td><code>y</code></td><td>nw 角</td></tr>
+            <tr><td><code>s</code></td><td><code>x + w/2</code></td><td><code>y</code></td><td>n 边中点</td></tr>
+            <tr><td><code>sw</code></td><td><code>x + w</code></td><td><code>y</code></td><td>ne 角</td></tr>
+            <tr><td><code>w</code></td><td><code>x + w</code></td><td><code>y + h/2</code></td><td>e 边中点</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-card-label">纯垂直手柄（n / s）</div>
+          <ul>
+            <li>x 和 w 保持不变</li>
+            <li>只更新 y 和 h</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <div class="info-card-label">纯水平手柄（e / w）</div>
+          <ul>
+            <li>y 和 h 保持不变</li>
+            <li>只更新 x 和 w</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- useRotate -->
+    <section class="section" id="use-rotate">
+      <div class="section-header">
+        <h2>useRotate</h2>
+        <span class="tag tag-rotate">hook</span>
+      </div>
+      <div class="filepath">src/hooks/useRotate.ts</div>
+      <p class="section-desc">单元素自由旋转。以元素中心为原点，用 atan2 计算当前角和起始角之差，连续更新 rotate。</p>
+
+      <div class="sig-box">
+        <code>useRotate(
+  elementId:    string,
+  canvasScale:  () =&gt; number,
+  getCanvasRect: () =&gt; DOMRect | null
+) → { onRotateStart: (e: MouseEvent | TouchEvent) =&gt; void }</code>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-card-label">起点记录</div>
+          <ul>
+            <li>元素中心 → <code>centerRef</code></li>
+            <li><code>startAngle = atan2(y−cy, x−cx) − rotate_rad</code></li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <div class="info-card-label">mousemove 计算</div>
+          <ul>
+            <li><code>cur = atan2(y−cy, x−cx)</code></li>
+            <li><code>rotate = (cur − startAngle) × 180/π</code></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ResizeHandles -->
+    <section class="section" id="resize-handles">
+      <div class="section-header">
+        <h2>ResizeHandles</h2>
+        <span class="tag tag-comp">component</span>
+      </div>
+      <div class="filepath">src/components/Element/ResizeHandles.tsx</div>
+      <p class="section-desc">8 个缩放手柄，绝对定位在元素容器（已应用 <code style="font-family:var(--font-mono);font-size:11.5px;background:var(--code-bg);padding:1px 4px;border-radius:3px">transform:rotate</code>）的 4 角和 4 边中点。</p>
+
+      <div class="sig-box">
+        <code>interface ResizeHandlesProps {
+  onHandlePointerDown: (
+    e: React.MouseEvent | React.TouchEvent,
+    handle: HandleType
+  ) =&gt; void
+}</code>
+      </div>
+
+      <div class="handle-diagram" aria-hidden="true">
+        <div class="hd-box">
+          <!-- corners -->
+          <div class="hd-dot" style="top:0;left:0;transform:translate(-50%,-50%)"></div>
+          <div class="hd-dot" style="top:0;right:0;transform:translate(50%,-50%)"></div>
+          <div class="hd-dot" style="bottom:0;left:0;transform:translate(-50%,50%)"></div>
+          <div class="hd-dot" style="bottom:0;right:0;transform:translate(50%,50%)"></div>
+          <!-- edges -->
+          <div class="hd-dot" style="top:0;left:50%;transform:translate(-50%,-50%)"></div>
+          <div class="hd-dot" style="bottom:0;left:50%;transform:translate(-50%,50%)"></div>
+          <div class="hd-dot" style="top:50%;left:0;transform:translate(-50%,-50%)"></div>
+          <div class="hd-dot" style="top:50%;right:0;transform:translate(50%,-50%)"></div>
+          <!-- labels -->
+          <div class="hd-label" style="top:-18px;left:-4px">nw</div>
+          <div class="hd-label" style="top:-18px;left:50%;transform:translateX(-50%)">n</div>
+          <div class="hd-label" style="top:-18px;right:-4px">ne</div>
+          <div class="hd-label" style="top:50%;right:-22px;transform:translateY(-50%)">e</div>
+          <div class="hd-label" style="bottom:-16px;right:-4px">se</div>
+          <div class="hd-label" style="bottom:-16px;left:50%;transform:translateX(-50%)">s</div>
+          <div class="hd-label" style="bottom:-16px;left:-4px">sw</div>
+          <div class="hd-label" style="top:50%;left:-22px;transform:translateY(-50%)">w</div>
+        </div>
+      </div>
+
+      <div class="info-card" style="margin-bottom:0">
+        <div class="info-card-label">手柄样式</div>
+        <ul>
+          <li>尺寸：<code>w-2 h-2</code>（8×8px），圆形</li>
+          <li>颜色：<code>bg-white border-blue-500</code></li>
+          <li>cursor：各方向对应 CSS resize cursor（<code>nw-resize</code> 等）</li>
+          <li>z-index：<code>z-10</code>，高于元素内容</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- RotateHandle -->
+    <section class="section" id="rotate-handle">
+      <div class="section-header">
+        <h2>RotateHandle</h2>
+        <span class="tag tag-comp">component</span>
+      </div>
+      <div class="filepath">src/components/Element/RotateHandle.tsx</div>
+      <p class="section-desc">旋转手柄，定位于元素顶边中点上方 24px，用一条 1px 竖线连接到元素顶边。</p>
+
+      <div class="sig-box">
+        <code>interface RotateHandleProps {
+  onRotatePointerDown: (
+    e: React.MouseEvent | React.TouchEvent
+  ) =&gt; void
+}</code>
+      </div>
+
+      <div class="rh-diagram" aria-hidden="true">
+        <div class="rh-wrap">
+          <div class="rh-dot"></div>
+          <div class="rh-line"></div>
+          <div class="rh-box"></div>
+        </div>
+      </div>
+
+      <div class="info-card" style="margin-bottom:0">
+        <div class="info-card-label">定位细节</div>
+        <ul>
+          <li>手柄圆心：<code>top: -44px</code>，<code>left: 50%</code> 居中</li>
+          <li>连接线：<code>top: -24px</code>，高 24px，宽 1px，<code>pointerEvents: none</code></li>
+          <li>手柄样式：<code>w-5 h-5 rounded-full bg-blue-500 cursor-crosshair</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Usage -->
+    <section class="section" id="usage">
+      <div class="section-header">
+        <h2>Usage example</h2>
+      </div>
+      <p class="section-desc">在元素容器组件中组合使用的典型写法。</p>
+
+      <div class="snippet-label">ElementWrapper.tsx（示意）</div>
+      <div class="snippet">
+        <pre>const { onMoveStart }   = useMove(selectedIds, getScale, getRect)
+const { onResizeStart } = useResize(el.id, getScale, getRect)
+const { onRotateStart } = useRotate(el.id, getScale, getRect)
+
+&lt;div
+  style={{
+    position: 'absolute',
+    left: el.x, top: el.y, width: el.w, height: el.h,
+    transform: `rotate(${el.rotate}deg)`,
+    transformOrigin: 'center center',
+  }}
+  onMouseDown={(e) =&gt; onMoveStart(e.nativeEvent)}
+  onTouchStart={(e) =&gt; onMoveStart(e.nativeEvent)}
+&gt;
+  {/* 内容 */}
+  {isSelected &amp;&amp; (
+    &lt;&gt;
+      &lt;ResizeHandles
+        onHandlePointerDown={(e, handle) =&gt; onResizeStart(e.nativeEvent, handle)}
+      /&gt;
+      &lt;RotateHandle
+        onRotatePointerDown={(e) =&gt; onRotateStart(e.nativeEvent)}
+      /&gt;
+    &lt;/&gt;
+  )}
+&lt;/div&gt;</pre>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  function toggleTheme() {
+    const root = document.documentElement
+    const cur = root.getAttribute('data-theme')
+    if (!cur) {
+      const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      root.setAttribute('data-theme', sysDark ? 'light' : 'dark')
+    } else {
+      root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark')
+    }
+  }
+
+  // Active nav link on scroll
+  const sections = document.querySelectorAll('.section')
+  const links = document.querySelectorAll('.nav a')
+  const obs = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'))
+        const link = document.querySelector(`.nav a[href="#${entry.target.id}"]`)
+        if (link) link.classList.add('active')
+      }
+    }
+  }, { rootMargin: '-30% 0px -60% 0px' })
+  sections.forEach(s => obs.observe(s))
+</script>
