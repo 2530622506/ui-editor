@@ -3,22 +3,25 @@ import {
   Shapes, Layers, ChevronLeft, ChevronRight,
   Square, Circle, Triangle, Type, Image as ImageIcon,
   Minus, ArrowRight, ArrowBigRight, Hexagon, Pencil,
+  LayoutTemplate,
 } from 'lucide-react'
 import { useEditorStore } from '@/store/editor'
 import type { EditorElement, ElementType } from '@/types/element'
 import { DRAG_TYPE_KEY, type DragPayload } from '@/utils/dragDrop'
+import TemplatesPanel from '@/components/TemplatesPanel'
 
 const CANVAS_CENTER_X = 540
 const CANVAS_CENTER_Y = 960
 const rand = () => Math.round((Math.random() - 0.5) * 150)
 const DEFAULT = { fill: '#4f86f7', stroke: '#2563eb', strokeWidth: 2, opacity: 1, rotate: 0 }
 
-type TabKey = 'elements' | 'layers'
+type TabKey = 'elements' | 'layers' | 'templates'
 interface Tab { key: TabKey; label: string; icon: React.ReactNode }
 
 const TABS: Tab[] = [
-  { key: 'elements', label: '元素', icon: <Shapes size={18} strokeWidth={1.5} /> },
-  { key: 'layers',   label: '图层', icon: <Layers  size={18} strokeWidth={1.5} /> },
+  { key: 'elements',  label: '元素', icon: <Shapes         size={18} strokeWidth={1.5} /> },
+  { key: 'templates', label: '模板', icon: <LayoutTemplate size={18} strokeWidth={1.5} /> },
+  { key: 'layers',    label: '图层', icon: <Layers         size={18} strokeWidth={1.5} /> },
 ]
 
 interface ShapeDef {
@@ -114,8 +117,9 @@ export default function LeftSidebar() {
       {panelOpen && (
         <div style={{ width: 190, display: 'flex', flexDirection: 'column', overflowY: 'auto',
           flexShrink: 0, borderRight: '1px solid #eef2f8' }}>
-          {activeTab === 'elements' && <ElementsPanel onAdd={addShape} onToggleDraw={toggleDrawMode} activeDrawKey={drawMode} />}
-          {activeTab === 'layers'   && <LayersPanel elements={elements} selectedIds={selectedIds} />}
+          {activeTab === 'elements'  && <ElementsPanel onAdd={addShape} onToggleDraw={toggleDrawMode} activeDrawKey={drawMode} />}
+          {activeTab === 'templates' && <TemplatesPanel />}
+          {activeTab === 'layers'    && <LayersPanel elements={elements} selectedIds={selectedIds} />}
         </div>
       )}
     </div>

@@ -36,6 +36,9 @@ export interface EditorState {
   groupSelected: () => void
   ungroupSelected: () => void
 
+  // 批量替换元素（模板加载用）
+  setElements: (els: Omit<EditorElement, 'id'>[]) => void
+
   // 清空画布
   clearAll: () => void
 
@@ -197,6 +200,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   clearAll: () => {
     set({ elements: [], selectedIds: [] })
+    get().pushHistory()
+  },
+
+  setElements: (els) => {
+    const newEls = els.map(el => ({ ...el, id: nanoid() } as EditorElement))
+    set({ elements: newEls, selectedIds: [] })
     get().pushHistory()
   },
 
