@@ -56,6 +56,7 @@ export default function ElementComponent({ element: el, preview = false }: Props
     left: el.x, top: el.y, width: el.w, height: el.h,
     transform: `rotate(${el.rotate}deg)`,
     opacity: el.opacity,
+    touchAction: 'none',
   }
 
   const borderStyle = el.strokeWidth > 0 ? `${el.strokeWidth}px solid ${el.stroke}` : 'none'

@@ -22,6 +22,8 @@ export function useMove(
 
   const onMouseMove = useCallback(
     (e: MouseEvent | TouchEvent) => {
+      // 阻止移动端默认滚动行为，让 touchmove 专注于元素拖动
+      if ('touches' in e) e.preventDefault()
       const rect = getCanvasRect()
       if (!rect) return
       const scale = canvasScale()

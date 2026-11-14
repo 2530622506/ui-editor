@@ -3,6 +3,7 @@ import { Undo2, Redo2, Trash2, Trash, Group, Ungroup, Eye, Stamp, Hand } from 'l
 import { useEditorStore } from '@/store/editor'
 import PreviewModal from '@/components/PreviewModal'
 import WatermarkModal from '@/components/WatermarkModal'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 function Sep() {
   return <div style={{ width: 1, height: 18, background: '#eef2f8', margin: '0 4px', flexShrink: 0 }} />
@@ -32,6 +33,38 @@ function TBtn({
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
     >
       {children}
+    </button>
+  )
+}
+
+// 移动端图标+文字上下布局按钮
+function MTBtn({
+  onClick, title, disabled = false, danger = false, children, label,
+}: {
+  onClick?: () => void; title: string; disabled?: boolean; danger?: boolean; children: React.ReactNode; label?: string
+}) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 2, padding: '0 8px', height: '100%', minWidth: 40,
+        borderRadius: 6, border: 'none', flexShrink: 0,
+        color: disabled ? '#ccc' : danger ? '#e53e3e' : '#555',
+        background: 'transparent',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        userSelect: 'none', WebkitTapHighlightColor: 'transparent',
+        transition: 'background 0.15s',
+      }}
+      onMouseEnter={e => {
+        if (!disabled) (e.currentTarget as HTMLElement).style.background = danger ? '#fff5f5' : '#f6f7f9'
+      }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+    >
+      {children}
+      {label && <span style={{ fontSize: 10, lineHeight: 1, letterSpacing: 0 }}>{label}</span>}
     </button>
   )
 }
@@ -105,6 +138,7 @@ export default function Toolbar() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [showWatermark, setShowWatermark] = useState(false)
+  const isMobile = useIsMobile()
 
   const {
     undo, redo, historyIndex, history,
@@ -123,6 +157,113 @@ export default function Toolbar() {
 
   const handleClearConfirm = () => { clearAll(); setShowConfirm(false) }
 
+  // ── 移动端：纯图标工具栏，只保留底部栏没有的功能 ──
+  if (isMobile) {
+    return (
+      <>
+        <div style={{
+          display: 'flex', alignItems: 'center', width: '100%', height: '100%',
+          gap: 2, overflowX: 'auto', overflowY: 'hidden',
+          // 隐藏滚动条但保留滚动能力
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        } as React.CSSProperties}>
+          {/* Logo */}
+          <span style={{
+            fontSize: 13, fontWeight: 700, color: '#333',
+            marginRight: 4, flexShrink: 0, userSelect: 'none', letterSpacing: '-0.3px',
+          }}>
+            UI
+          </span>
+          <Sep />
+
+          {/* 撤销 / 重做（底部栏已有，这里作为快捷保留） */}
+          <MTBtn title="撤销" disabled={!canUndo} onClick={undo} label="撤销">
+            <Undo2 size={16} />
+          </MTBtn>
+          <MTBtn title="重做" disabled={!canRedo} onClick={redo} label="重做">
+            <Redo2 size={16} />
+          </MTBtn>
+
+          {/* 删除 */}
+          <MTBtn title="删除选中" disabled={!canDelete} onClick={deleteSelected} danger label="删除">
+            <Trash2 size={16} />
+          </MTBtn>
+
+          {/* 组合 / 取消组合（底部栏没有） */}
+          {canGroup && (
+            <>
+              <Sep />
+              <MTBtn title="组合" onClick={groupSelected} label="组合">
+                <Group size={16} />
+              </MTBtn>
+            </>
+          )}
+          {canUngroup && (
+            <MTBtn title="取消组合" onClick={ungroupSelected} label="取消">
+              <Ungroup size={16} />
+            </MTBtn>
+          )}
+
+          <div style={{ flex: 1, minWidth: 4 }} />
+
+          {/* 选中数量提示 */}
+          {selectedIds.length > 0 && (
+            <span style={{
+              fontSize: 11, color: '#aaa', flexShrink: 0,
+              userSelect: 'none', whiteSpace: 'nowrap',
+            }}>
+              {selectedIds.length}个
+            </span>
+          )}
+
+          <Sep />
+
+          {/* 拖动模式 */}
+          <MTBtn
+            title={isDragMode ? '退出拖动' : '拖动画布'}
+            onClick={() => setDragMode(!isDragMode)}
+            label="拖动"
+          >
+            <Hand size={16} style={{ color: isDragMode ? '#4f86f7' : undefined }} />
+          </MTBtn>
+
+          {/* 预览 */}
+          <MTBtn title="预览" onClick={() => setShowPreview(true)} label="预览">
+            <Eye size={16} />
+          </MTBtn>
+
+          {/* 水印 */}
+          <MTBtn title="水印" onClick={() => setShowWatermark(true)} label="水印">
+            <span style={{ position: 'relative', display: 'flex' }}>
+              <Stamp size={16} />
+              {watermark && (
+                <span style={{
+                  position: 'absolute', top: -2, right: -3,
+                  width: 5, height: 5, borderRadius: '50%', background: '#4f86f7',
+                }} />
+              )}
+            </span>
+          </MTBtn>
+
+          <Sep />
+
+          {/* 清空 */}
+          <MTBtn title="清空画布" disabled={!hasElements} danger onClick={() => setShowConfirm(true)} label="清空">
+            <Trash size={16} />
+          </MTBtn>
+        </div>
+
+        {showPreview   && <PreviewModal   onClose={() => setShowPreview(false)} />}
+        {showWatermark && <WatermarkModal onClose={() => setShowWatermark(false)} />}
+        {showConfirm && (
+          <ConfirmDialog onConfirm={handleClearConfirm} onCancel={() => setShowConfirm(false)} />
+        )}
+      </>
+    )
+  }
+
+  // ── 桌面端：原有布局不变 ──
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', gap: 2 }}>
@@ -172,7 +313,7 @@ export default function Toolbar() {
 
         <Sep />
 
-        {/* 拖动模式开关（参考 vue-fabric-editor dragMode） */}
+        {/* 拖动模式开关 */}
         <button
           title={isDragMode ? '退出拖动模式' : '开启拖动模式（可移动画布）'}
           onClick={() => setDragMode(!isDragMode)}

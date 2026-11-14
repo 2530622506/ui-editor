@@ -181,8 +181,9 @@ export default function Canvas() {
   const canvasH = useEditorStore((s) => s.canvasH)
   const setCanvasSize = useEditorStore((s) => s.setCanvasSize)
 
-  // 画布拖动模式：鼠标拖动移动偏移
+  // 画布拖动模式：鼠标 + 触摸单指拖动移动偏移
   const dragStartRef = useRef<{ mouseX: number; mouseY: number; offX: number; offY: number } | null>(null)
+
   const handleViewportMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDragMode) return
     e.preventDefault()
@@ -201,6 +202,29 @@ export default function Canvas() {
     }
     document.addEventListener('mousemove', handleMove)
     document.addEventListener('mouseup', handleUp)
+  }, [isDragMode, canvasOffsetX, canvasOffsetY])
+
+  // 移动端拖动模式：单指平移画布
+  const handleViewportTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragMode || e.touches.length !== 1) return
+    e.preventDefault()
+    const t = e.touches[0]
+    dragStartRef.current = { mouseX: t.clientX, mouseY: t.clientY, offX: canvasOffsetX, offY: canvasOffsetY }
+    const handleMove = (te: TouchEvent) => {
+      if (!dragStartRef.current || te.touches.length !== 1) return
+      te.preventDefault()
+      const dx = te.touches[0].clientX - dragStartRef.current.mouseX
+      const dy = te.touches[0].clientY - dragStartRef.current.mouseY
+      setCanvasOffsetX(Math.max(0, dragStartRef.current.offX + dx))
+      setCanvasOffsetY(Math.max(0, dragStartRef.current.offY + dy))
+    }
+    const handleUp = () => {
+      dragStartRef.current = null
+      document.removeEventListener('touchmove', handleMove)
+      document.removeEventListener('touchend', handleUp)
+    }
+    document.addEventListener('touchmove', handleMove, { passive: false })
+    document.addEventListener('touchend', handleUp)
   }, [isDragMode, canvasOffsetX, canvasOffsetY])
 
   // 画布边缘拖拽调整宽高（参考 vue-fabric-editor setSize）
@@ -322,6 +346,7 @@ export default function Canvas() {
           cursor: drawMode ? 'crosshair' : isDragMode ? 'grab' : undefined,
         }}
           onMouseDown={isDragMode ? handleViewportMouseDown : undefined}
+          onTouchStart={isDragMode ? handleViewportTouchStart : undefined}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
         >

@@ -23,9 +23,9 @@ export default function App() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fff', overflow: 'hidden' }}>
         <header style={{
-          flexShrink: 0, height: 52, background: '#fff',
+          flexShrink: 0, height: 60, background: '#fff',
           borderBottom: '1px solid #eef2f8',
-          display: 'flex', alignItems: 'center', padding: '0 12px', zIndex: 20,
+          display: 'flex', alignItems: 'stretch', padding: '0 8px', zIndex: 20,
         }}>
           <Toolbar />
         </header>
